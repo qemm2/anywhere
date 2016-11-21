@@ -1,0 +1,35 @@
+
+menu "Phase 1: Cluster Resource Provisioning"
+
+config phase1.num_nodes
+	int "number of nodes"
+	default 4
+	range 1 1000
+	help
+	  The number of nodes you would like to provision.
+
+config phase1.cluster_name
+	string "cluster name"
+	default "kubernetes"
+	help
+	  An identifier to use for this cluster.
+	  This is used for compute instance names as a prefix,
+	  and for naming any other cloud provider resources.
+
+menuconfig phase1.cloud_provider
+	string "cloud provider"
+	default "gce"
+	help
+	  The cloud provider you would like to deploy to.
+
+	  Valid options are (gce, azure).
+
+if phase1.cloud_provider = "gce"
+	source "phase1/gce/Kconfig"
+endif
+
+if phase1.cloud_provider = "azure"
+	source "phase1/azure/Kconfig"
+endif
+
+endmenu

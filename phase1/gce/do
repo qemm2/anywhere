@@ -1,0 +1,46 @@
+#! /bin/bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+set -x
+
+cd "${BASH_SOURCE%/*}"
+
+generate_token() {
+  perl -e 'printf "%06X.%08X%08X\n", rand(0xffffff), rand(0xffffffff), rand(0xffffffff);'
+}
+
+gen() {
+  TOKEN=$(generate_token)
+  mkdir -p .tmp/
+  jsonnet -J ../../ --multi .tmp/ all.jsonnet
+  echo "kubeadm_token = \"$TOKEN\"" > .tmp/terraform.tfvars
+}
+
+deploy() {
+  gen
+  terraform apply -var-file .tmp/terraform.tfvars .tmp
+}
+
+destroy() {
+  FLAGS=""
+  if [[ "${FORCE_DESTROY:-}" == "y" ]]; then
+    FLAGS="-force"
+  fi
+  terraform destroy -var-file .tmp/terraform.tfvars $FLAGS .tmp
+}
+
+case "${1:-}" in
+  "")
+    ;;
+  "deploy-cluster")
+    deploy
+    ;;
+  "destroy-cluster")
+    destroy
+    ;;
+  "gen")
+    gen
+    ;;
+esac

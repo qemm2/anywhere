@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+total_time=0
+wait_duration=10
+num_nodes="$(( $(cat ./.config.json | jq -r '.phase1.num_nodes') + 1 ))"
+
+while true; do
+  total_time=$(( ${total_time} + ${wait_duration} ))
+  hcount=$(kubectl get nodes 2>/dev/null | grep 'Ready' | wc -l) || true
+  echo "Validation: Expected ${num_nodes} healthy nodes; found ${hcount}. (${total_time}s elapsed)"
+
+  [[ "${hcount}" -ge "${num_nodes}" ]] && echo "Validation: Success!" && exit
+
+  sleep ${wait_duration}
+done
+
+echo "Cluster is Ready!"
